@@ -1,0 +1,36 @@
+#@ load("@ytt:data", "data")
+#@ load("_ytt.lib.yml", "labels", "targetLabels")
+
+#@ if data.values.registry.enable_pod_monitor:
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: #@ data.values.registry.app
+  namespace: #@ data.values.registry.namespace
+  labels: #@ labels()
+spec:
+  namespaceSelector:
+    matchNames:
+    - #@ data.values.registry.namespace
+  selector:
+    matchLabels: #@ labels()
+  podTargetLabels: #@ targetLabels()
+  podMetricsEndpoints:
+  - path: /metrics
+    interval: 60s
+    scrapeTimeout: 10s
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+      regex: "true"
+      action: keep
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      regex: #@ data.values.registry.app + ".*"
+      action: keep
+    - sourceLabels: [__meta_kubernetes_pod_container_name]
+      regex: registry
+      action: keep
+    - sourceLabels: [__meta_kubernetes_pod_container_port_number]
+      regex: "9090"
+      action: keep
+#@ end

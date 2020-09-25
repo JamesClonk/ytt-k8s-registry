@@ -1,0 +1,58 @@
+#@ load("@ytt:data", "data")
+#@ load("_ytt.lib.yml", "labels")
+
+#@ if data.values.registry.enable_network_policy:
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: #@ data.values.registry.app
+  namespace: #@ data.values.registry.namespace
+  labels: #@ labels()
+spec:
+  podSelector:
+    matchLabels: #@ labels()
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          cf-for-k8s.cloudfoundry.org/istio-system-ns: ""
+      podSelector:
+        matchLabels:
+          istio: ingressgateway
+    - namespaceSelector:
+        matchLabels:
+          cf-for-k8s.cloudfoundry.org/cf-system-ns: ""
+      podSelector: {}
+    - namespaceSelector:
+        matchLabels:
+          cf-for-k8s.cloudfoundry.org/kpack-ns: ""
+      podSelector: {}
+    - namespaceSelector:
+        matchLabels:
+          cf-for-k8s.cloudfoundry.org/cf-workloads-staging-ns: ""
+      podSelector: {}
+    - namespaceSelector:
+        matchLabels:
+          cf-for-k8s.cloudfoundry.org/cf-registry-ns: ""
+      podSelector:
+        matchLabels: #@ labels()
+    ports:
+    - port: 5000
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          cf-for-k8s.cloudfoundry.org/cf-system-ns: ""
+      podSelector:
+        matchLabels:
+          metrics: prometheus
+    - namespaceSelector:
+        matchLabels:
+          cf-for-k8s.cloudfoundry.org/cf-registry-ns: ""
+      podSelector:
+        matchLabels: #@ labels()
+    ports:
+    - port: 9090
+#@ end

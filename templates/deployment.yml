@@ -1,0 +1,109 @@
+#@ load("@ytt:assert", "assert")
+#@ load("@ytt:data", "data")
+#@ load("_ytt.lib.yml", "labels", "podAntiAffinity")
+
+#@ if len(data.values.registry.system_domain) == 0:
+#@  assert.fail("system_domain is missing!")
+#@ end
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: #@ data.values.registry.app
+  namespace: #@ data.values.registry.namespace
+  labels: #@ labels()
+spec:
+  ports:
+  - port: 5000
+    name: registry
+  selector: #@ labels()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: #@ data.values.registry.app
+  namespace: #@ data.values.registry.namespace
+  labels: #@ labels()
+spec:
+  selector:
+    matchLabels: #@ labels()
+  replicas: #@ data.values.registry.replicas
+  template:
+    metadata:
+      labels: #@ labels()
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+        prometheus.io/scrape_interval: "60s"
+    spec:
+      serviceAccountName: #@ data.values.registry.app + "-service-account"
+      securityContext:
+        runAsUser: 1007
+        runAsGroup: 1007
+        fsGroup: 1007
+      restartPolicy: Always
+      affinity: #@ podAntiAffinity()
+      containers:
+      - name: registry
+        image: registry:2.7
+        #@ if/end data.values.registry.always_pull_images:
+        imagePullPolicy: Always
+        securityContext:
+          allowPrivilegeEscalation: false
+        ports:
+        - containerPort: 5000
+        - containerPort: 9090
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 5
+          httpGet:
+            path: /debug/health
+            port: 9090
+        volumeMounts:
+        - name: htpasswd
+          mountPath: /auth/htpasswd
+          subPath: htpasswd
+        - name: registry-config
+          mountPath: /etc/docker/registry/config.yml
+          subPath: config.yml
+        - name: storage-volume
+          mountPath: /var/lib/registry
+          subPath: ""
+      volumes:
+      - name: htpasswd
+        secret:
+          secretName: #@ data.values.registry.app + "-htpasswd"
+      - name: registry-config
+        secret:
+          secretName: #@ data.values.registry.app + "-config"
+      #@ if/end data.values.registry.storage.driver == "filesystem":
+      - name: storage-volume
+        persistentVolumeClaim:
+          claimName: #@ data.values.registry.app + "-pvc"
+
+#@ if data.values.registry.storage.driver == "filesystem":
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: #@ data.values.registry.app + "-pvc"
+  namespace: #@ data.values.registry.namespace
+  labels: #@ labels()
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+#@ end

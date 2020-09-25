@@ -1,0 +1,23 @@
+#@ load("@ytt:data", "data")
+#@ load("_ytt.lib.yml", "labels")
+
+#@ if data.values.registry.register_virtual_service:
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: #@ data.values.registry.app + "-virtual-service"
+  namespace: #@ data.values.registry.namespace
+  labels: #@ labels()
+spec:
+  hosts:
+  - #@ data.values.registry.app + "." + data.values.registry.system_domain
+  gateways:
+  - cf-system/istio-ingressgateway
+  http:
+  - route:
+    - destination:
+        host: #@ data.values.registry.app + "." + data.values.registry.namespace + ".svc.cluster.local"
+        port:
+          number: 5000
+#@ end

@@ -1,0 +1,27 @@
+#@data/values
+---
+registry:
+  app: registry
+  namespace: cf-registry
+  system_domain: ""
+
+  enable_network_policy: true
+  register_virtual_service: true
+
+  enable_pod_monitor: false
+  enable_pod_security_policy: false
+  remove_pod_anti_affinity: false
+  always_pull_images: false
+
+  replicas: 1 #! for high-availability increase replicas and use s3 storage backend instead of filesystem
+
+  htpasswd: "" #! https://docs.docker.com/registry/configuration/#htpasswd
+  shared_secret: "" #! https://docs.docker.com/registry/configuration/#http
+  storage:
+    driver: filesystem #! filesystem or s3
+    s3: #! https://github.com/docker/docker.github.io/blob/master/registry/storage-drivers/s3.md
+      access_key_id: ""
+      secret_access_key: ""
+      endpoint: ""
+      region: ""
+      bucket: ""

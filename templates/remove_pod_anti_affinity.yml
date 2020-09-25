@@ -1,0 +1,11 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:overlay", "overlay")
+
+#@ if data.values.registry.remove_pod_anti_affinity:
+#@overlay/match by=overlay.subset({"kind":"Deployment", "metadata":{"name": data.values.registry.app}}), expects=1
+---
+spec:
+  template:
+    spec:
+      affinity: #@overlay/remove
+#@ end

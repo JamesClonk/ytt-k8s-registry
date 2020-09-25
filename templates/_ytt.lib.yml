@@ -1,0 +1,31 @@
+#@ load("@ytt:data", "data")
+#@ load("@ytt:yaml", "yaml")
+
+#@ labelValues = {"cf-for-k8s.cloudfoundry.org/app": data.values.registry.app, "cf-for-k8s.cloudfoundry.org/cf-registry": ""}
+
+#@ def labels():
+#@  return labelValues
+#@ end
+
+#@ def targetLabels():
+#@   return labelValues.keys()
+#@ end
+
+#@ def labelSelector():
+  matchExpressions:
+#@   for key in labelValues.keys():
+  - key: #@ key
+    operator: In
+    values:
+    - #@ labelValues.get(key)
+#@   end
+#@ end
+
+#@ def podAntiAffinity():
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - topologyKey: kubernetes.io/hostname
+      labelSelector: #@ labelSelector()
+    - topologyKey: topology.kubernetes.io/zone
+      labelSelector: #@ labelSelector()
+#@ end
