@@ -77,6 +77,7 @@ spec:
         - name: registry-config
           mountPath: /etc/docker/registry/config.yml
           subPath: config.yml
+        #@ if/end data.values.registry.storage.driver == "filesystem":
         - name: storage-volume
           mountPath: /var/lib/registry
           subPath: ""
