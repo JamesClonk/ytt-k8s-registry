@@ -3,5 +3,5 @@
 registry:
   system_domain: system.cf.example.com
 
-  htpasswd: cf:$2a$10$2sjW2i7AD7hqrUytm7Nv4ORLDiyAr6cpu/.wpeF..tey.8gvMGK8G #! user: cf, password: demo
+  htpasswd: cf:$2a$10$eUnFPVRMPqpd30.DwJ3HnunWrMe6v34FzHHK/8YXQWFzVgqerVACK #! user: cf, password: demo
   shared_secret: 135393b2-5c4b-4d80-9027-dbc6b1bb6137
